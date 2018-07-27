@@ -17,7 +17,6 @@ const targetPort = require('yargs').argv.targetPort;
 
 const UglifyPlugin = webpack.optimize.UglifyJsPlugin;
 const CommonsChunkPlugin = webpack.optimize.CommonsChunkPlugin;
-const DedupePlugin = webpack.optimize.DedupePlugin;
 
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const BrowserSyncPlugin = require('browser-sync-webpack-plugin');
@@ -86,12 +85,11 @@ if (env === 'production') {
 			comments: false,
 		},
 		minimize: true,
-		sourceMap: false,
+		sourceMap: true,
 		compress: {
 			warnings: false
 		}
 	}));
-	plugins.push(new DedupePlugin());
 	outputFile = `${outputFile}.min.[chunkhash].js`;
 	vendorOutputFile = "vendor.bundle.[chunkhash].js";
 	outputPath = `${__dirname}/dist/`;
@@ -153,23 +151,20 @@ plugins.push(new CopyWebpackPlugin([{
 	from: './app/img/omrs-button.png',
 	to: 'img/omrs-button.png'
 }]));
-
+plugins.push(new webpack.LoaderOptionsPlugin({
+  options: {
+    context: path.join(__dirname, 'src'),
+  }
+}))
 
 
 var webpackConfig = {
-	quiet: false,
 	entry: {
-		app: `${__dirname}/app/js/openmrs-owa-orderentry`,
+		app: ['babel-polyfill', `${__dirname}/app/js/openmrs-owa-orderentry`],
 		css: `${__dirname}/app/css/openmrs-owa-orderentry.css`,
 		vendor: [
-
-
-
 			'react'
-
 			, 'redux', 'redux-promise-middleware', 'redux-thunk', 'react-redux'
-
-
 		]
 	},
 	devtool: devtool,
@@ -179,32 +174,37 @@ var webpackConfig = {
 		filename: '[name]' + outputFile,
 	},
 	module: {
-		loaders: [{
+		rules: [{
 			test: /\.jsx?$/,
 			loader: 'babel-loader',
-			exclude: /node_modules/,
-			query: {
-				presets: ['env', 'react'],
-				cacheDirectory: true,
-				plugins: ['transform-class-properties', 'transform-object-rest-spread']
-			}
+			exclude: /node_modules/
 		}, {
 			test: /\.css$/,
-			loader: 'style-loader!css-loader'
+			use: [
+		    "style-loader",
+		    "css-loader",
+		  ]
 		}, {
 			  test: /\.(png|jpg|jpeg|gif|svg|eot|ttf|woff|woff2)$/,
-			loader: 'url'
+			loader: 'url-loader'
 		}, {
 			test: /\.html$/,
-			loader: 'html'
+			loader: 'html-loader'
 		}, {
 			test: /\.scss$/,
-			loaders: ["style-loader", "css-loader", "sass-loader"]
+			use: [
+				"style-loader", // creates style nodes from JS strings
+				"css-loader", // translates CSS into CommonJS
+				"sass-loader" // compiles Sass to CSS
+			]
 	}],
 	},
 	resolve: {
-		root: path.resolve('./src'),
-		extensions: ['', '.js', '.jsx'],
+		modules: [
+		   path.join(__dirname, "src"),
+		   "node_modules"
+		 ],
+		extensions: ['.js', '.jsx'],
 	},
 	plugins,
 	externals: nodeModules,
