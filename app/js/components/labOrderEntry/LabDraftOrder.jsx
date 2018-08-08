@@ -2,19 +2,21 @@ import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import shortid from 'shortid';
+import constants from '../../constants';
 
 export class LabDraftOrder extends PureComponent {
   handleToggleDraftOrderUgency = (event, order) => {
     event.preventDefault();
-    const orderId = order.id;
+    const orderUuid = order.uuid;
     let orderUrgency;
-    if (order.urgency && order.urgency === 'routine') {
-      orderUrgency = 'STAT';
+    const hasUrgencyProperty = Object.prototype.hasOwnProperty.call(order, 'urgency');
+    if (hasUrgencyProperty && order.urgency === constants.ROUTINE) {
+      orderUrgency = constants.STAT;
     } else {
-      orderUrgency = 'routine';
+      orderUrgency = constants.ROUTINE;
     }
     const draftOrder = {
-      orderId,
+      orderUuid,
       orderUrgency,
     };
     this.props.toggleDraftLabOrdersUgency(draftOrder);
@@ -32,10 +34,10 @@ export class LabDraftOrder extends PureComponent {
       const draftType = !isPanel ? 'single' : 'panel';
       const orderName = order.display;
       const iconClass = classNames(
-        'icon-warning-sign',
+        'icon-warning-sign scale',
         {
-          'i-gray': order.urgency === 'routine',
-          'i-black': order.urgency === 'STAT',
+          'i-gray': order.urgency === constants.ROUTINE,
+          'i-red': order.urgency === constants.STAT,
         },
       );
       return (
